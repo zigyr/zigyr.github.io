@@ -1,5 +1,5 @@
 ---
-title: nginx配置·5 | return 跳转
+title: nginx配置·6 | return 跳转
 date: 2026-04-23 16:40:00 +0800
 categories: [nginx配置]
 ---

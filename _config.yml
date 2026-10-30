@@ -85,6 +85,15 @@ time_format: HH:mm:ss
 ## updated_option supports 'mtime', 'date', 'empty'
 updated_option: 'mtime'
 
+# Word count and reading time
+symbols_count_time:
+  symbols: true
+  time: true
+  total_symbols: false
+  total_time: false
+  exclude_codeblock: true
+  wpm: 300
+
 # Post dates
 # Posts without a front-matter date use the first Git commit as their
 # creation time and the latest Git commit as their update time.

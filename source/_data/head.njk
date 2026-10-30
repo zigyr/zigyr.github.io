@@ -1,0 +1,88 @@
+<script>
+  (function() {
+    var storageKey = 'zigyr-theme-preference';
+    var root = document.documentElement;
+    var media = window.matchMedia('(prefers-color-scheme: dark)');
+    var themeColors = {
+      light: '{{ theme.theme_color.light }}',
+      dark: '{{ theme.theme_color.dark }}'
+    };
+    var validPreferences = ['auto', 'light', 'dark'];
+
+    function getPreference() {
+      try {
+        var preference = window.localStorage.getItem(storageKey);
+        return validPreferences.indexOf(preference) === -1 ? 'auto' : preference;
+      } catch (error) {
+        return 'auto';
+      }
+    }
+
+    function getTheme(preference) {
+      if (preference === 'auto') {
+        return media.matches ? 'dark' : 'light';
+      }
+      return preference;
+    }
+
+    function updateThemeColor(theme) {
+      document.querySelectorAll('meta[name="theme-color"][media]').forEach(function(element) {
+        element.parentNode.removeChild(element);
+      });
+      var meta = document.querySelector('meta[name="theme-color"]:not([media])');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        document.head.appendChild(meta);
+      }
+      meta.content = themeColors[theme];
+    }
+
+    function apply(preference) {
+      var theme = getTheme(preference);
+      root.dataset.theme = theme;
+      root.dataset.themePreference = preference;
+      root.style.colorScheme = theme;
+      updateThemeColor(theme);
+      window.dispatchEvent(new CustomEvent('themechange', {
+        detail: { preference: preference, theme: theme }
+      }));
+    }
+
+    function setPreference(preference) {
+      if (validPreferences.indexOf(preference) === -1) return;
+      try {
+        window.localStorage.setItem(storageKey, preference);
+      } catch (error) {
+        // The selected theme still applies for this page when storage is unavailable.
+      }
+      apply(preference);
+    }
+
+    function toggle() {
+      var current = root.dataset.theme;
+      setPreference(current === 'dark' ? 'light' : 'dark');
+    }
+
+    window.ZigyrTheme = {
+      apply: apply,
+      getPreference: getPreference,
+      getTheme: function() {
+        return root.dataset.theme;
+      },
+      setPreference: setPreference,
+      toggle: toggle
+    };
+
+    apply(getPreference());
+
+    var handleSystemThemeChange = function() {
+      if (getPreference() === 'auto') apply('auto');
+    };
+    if (media.addEventListener) {
+      media.addEventListener('change', handleSystemThemeChange);
+    } else {
+      media.addListener(handleSystemThemeChange);
+    }
+  })();
+</script>

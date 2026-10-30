@@ -11,6 +11,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  TZ: Asia/Shanghai
+
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -21,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

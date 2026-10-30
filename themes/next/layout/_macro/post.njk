@@ -65,7 +65,7 @@
     <div class="post-body{% if post.direction and post.direction.toLowerCase() === 'rtl' %} rtl{% endif %}" itemprop="articleBody">
       {%- if is_index %}
         {%- if post.description and theme.excerpt_description %}
-          <p>{{ post.description }}</p>
+          <p class="post-excerpt">{{ post.description }}</p>
           <!--noindex-->
           {%- if theme.read_more_btn %}
             <div class="post-button">
@@ -76,7 +76,7 @@
           {%- endif %}
           <!--/noindex-->
         {% elif post.excerpt %}
-          {{ post.excerpt }}
+          <div class="post-excerpt">{{ post.excerpt }}</div>
           <!--noindex-->
           {%- if theme.read_more_btn %}
             <div class="post-button">
@@ -87,7 +87,16 @@
           {%- endif %}
           <!--/noindex-->
         {% else %}
-          {{ post.content }}
+          <p class="post-excerpt">{{ truncate(strip_html(post.content), {length: 180, omission: '...'}) }}</p>
+          <!--noindex-->
+          {%- if theme.read_more_btn %}
+            <div class="post-button">
+              <a class="btn" href="{{ url_for(post.path) }}">
+                {{ __('post.read_more') }} &raquo;
+              </a>
+            </div>
+          {%- endif %}
+          <!--/noindex-->
         {%- endif %}
       {% else %}
         {{- next_inject('postBodyStart') }}

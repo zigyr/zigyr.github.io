@@ -1,0 +1,65 @@
+<script>
+  (function() {
+    if (!window.ZigyrTheme) return;
+
+    var icons = {
+      light: 'fa-sun',
+      dark: 'fa-moon'
+    };
+    var mobile = window.matchMedia('(max-width: 767px)');
+    var button = document.createElement('button');
+    var menuItem = document.createElement('li');
+
+    button.className = 'theme-toggle';
+    button.type = 'button';
+    button.dataset.themeToggle = '';
+    button.innerHTML = '<i class="fa fa-moon" aria-hidden="true"></i>';
+    menuItem.className = 'menu-item menu-item-theme';
+    menuItem.appendChild(button);
+
+    function render() {
+      var theme = window.ZigyrTheme.getTheme();
+      var nextTheme = theme === 'dark' ? 'light' : 'dark';
+      var label = theme === 'dark' ? '深色' : '浅色';
+      var nextLabel = nextTheme === 'dark' ? '深色' : '浅色';
+      var icon = button.querySelector('i');
+
+      button.dataset.mode = theme;
+      button.title = '当前：' + label + '，点击切换为' + nextLabel;
+      button.setAttribute('aria-label', '当前：' + label + '，点击切换为' + nextLabel);
+      if (icon) icon.className = 'fa ' + icons[theme];
+    }
+
+    function mount() {
+      var siteBrand = document.querySelector('.site-brand-container');
+      var mobileSearch = document.querySelector('.site-nav-search');
+      var menu = document.querySelector('.site-nav .main-menu');
+      var searchItem = menu && menu.querySelector('.menu-item-search');
+
+      if (mobile.matches && siteBrand && mobileSearch) {
+        if (button.parentElement !== siteBrand || button.previousElementSibling !== mobileSearch) {
+          mobileSearch.insertAdjacentElement('afterend', button);
+        }
+        button.classList.add('theme-toggle-mobile');
+      } else if (searchItem) {
+        if (menuItem.parentElement !== menu || menuItem.previousElementSibling !== searchItem) {
+          searchItem.insertAdjacentElement('afterend', menuItem);
+        }
+        button.classList.remove('theme-toggle-mobile');
+      }
+    }
+
+    button.addEventListener('click', function() {
+      window.ZigyrTheme.toggle();
+      render();
+    });
+    window.addEventListener('themechange', render);
+    if (mobile.addEventListener) {
+      mobile.addEventListener('change', mount);
+    } else {
+      mobile.addListener(mount);
+    }
+    render();
+    mount();
+  })();
+</script>

@@ -13,7 +13,7 @@ timezone: Asia/Shanghai
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://example.com
+url: https://zigyr.github.io
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
@@ -84,6 +84,12 @@ date_format: YYYY-MM-DD
 time_format: HH:mm:ss
 ## updated_option supports 'mtime', 'date', 'empty'
 updated_option: 'mtime'
+
+# Post dates
+# Posts without a front-matter date use the first Git commit as their
+# creation time and the latest Git commit as their update time.
+post_dates:
+  enable: true
 
 # Pagination
 ## Set per_page to 0 to disable pagination

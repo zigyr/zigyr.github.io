@@ -1,4 +1,4 @@
-# 0x0E - Mr-Robot1
+> [Mr-Robot: 1 ~ VulnHub](https://www.vulnhub.com/entry/mr-robot-1,151/)
 
 ## 攻击链路
 
@@ -83,11 +83,6 @@ Root
 
 | 技术 / 工具  | 操作 / Command                | 作用                       |
 | ------------ | ----------------------------- | -------------------------- |
-| 用户名枚举   | Burp Intruder + 忘记密码接口  | 利用响应差异识别有效用户名 |
-| 密码爆破     | Burp Intruder + `fsocity.dic` | 爆破 WordPress 登录凭据    |
-| 后台文件修改 | WordPress 插件 / 主题编辑器   | 修改 PHP 文件              |
-| PHP 代码执行 | `echo 123;`                   | 验证 PHP 文件是否执行      |
-| 反弹 Shell   | PHP Reverse Shell             | 获取目标机器命令行         |
 | Netcat 监听  | `rlwrap nc -lvnp 2233`        | 接收反弹 Shell             |
 
 ### 4. Shell —— 交互升级
@@ -105,25 +100,15 @@ Root
 
 | 技术 / 工具      | Command                                   | 作用                   |
 | ---------------- | ----------------------------------------- | ---------------------- |
-| 用户枚举         | `cat /etc/passwd`                         | 查看系统用户           |
-| 排除 nologin     | `grep -v nologin`                         | 初步筛选用户           |
-| 目录枚举         | `ls -la /home`                            | 查看用户家目录         |
-| Hash 提取        | 保存至 `hash.list`                        | 准备离线破解           |
 | Hashcat 字典攻击 | `hashcat -a 0 -m 0 hash.list rockyou.txt` | 破解 MD5               |
 | 查看破解结果     | `hashcat -m 0 hash.list --show`           | 显示已破解密码         |
 | 监听端口枚举     | `netstat -lntp`                           | 查看 TCP 监听端口      |
-| 用户切换         | `su robot`                                | 切换至 robot 用户      |
-| sudo 权限检查    | `sudo -l`                                 | 查看当前用户 sudo 权限 |
 
 ### 6. Privilege Escalation —— 提权
 
 | 技术 / 工具 | Command                                 | 作用                       |
 | ----------- | --------------------------------------- | -------------------------- |
 | SUID 枚举   | `find / -perm -u=s -type f 2>/dev/null` | 查找 SUID 文件             |
-| GTFOBins    | `https://gtfobins.github.io`            | 查询特殊二进制文件利用方式 |
-| Nmap SUID   | GTFOBins → Nmap → SUID                  | 利用 Nmap SUID 配置提权    |
-| 权限验证    | `id`                                    | 查看 UID、EUID、GID        |
-| Root 目录   | `cd /root`                              | 验证 Root 权限并获取 Flag  |
 
 ## 1. Recon —— 信息收集
 

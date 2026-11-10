@@ -1,5 +1,5 @@
 ---
-
+description: 本文记录第四届数信杯团队赛决赛实操题中一个 SSRF 漏洞的完整利用链分析。攻击者从 import.php 提交 URL，经 validate_import_url() 的 DNS 解析与 IP 黑名单校验后，进入 fetch_remote_document() 并由 file_get_contents() 发起请求；借助 DNS Rebinding 使二次解析指向目标服务，请求先到达 jump.php，再通过 HTTP 302 重定向到本机 preview.php。由于请求由服务端自身发起，REMOTE_ADDR 为 127.0.0.1，从而通过回环地址白名单；最后利用 ....// 双写绕过 str_replace('../', '', ...) 的路径穿越过滤，读取 jwt.key 等敏感文件。文末附完整 POC 链流程图。
 ---
 
 ## 0. 定位与前言

@@ -449,7 +449,7 @@ sudo hashcat -a 0 -m 0 hash.list ~/.exegol/workspaces/Zer0-hex/rockyou.txt --sho
 - [CMD5](https://cmd5.com)
 - [SOMD5](https://somd5.com)
 
-### 5.4 切换至 robot 用户
+### 切换至 robot 用户
 
 查看当前用户及所属组：
 
@@ -471,7 +471,7 @@ sudo -l
 
 ## 6. Privilege Escalation —— SUID 提权
 
-### 6.1 SUID 文件枚举
+### 1. SUID 文件枚举
 
 > Linux 中的 SUID（Set User ID）是一种特殊权限
 >
@@ -496,13 +496,13 @@ find / -perm -u=s -type f 2>/dev/null
 
 
 
-### 6.2 GTFOBins 查询利用方式
+### 2. GTFOBins 查询利用方式
 
 在 [GTFOBins](https://gtfobins.github.io/) 中查询 Nmap 发现存在 SUID 利用方式：
 
 ![image-20261108110146970](image-20261108110146970.png)
 
-### 6.3 Nmap SUID 提权
+### 3. Nmap SUID 提权
 
 ![image-20261108110409437](image-20261108110409437.png)
 

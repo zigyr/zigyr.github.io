@@ -2,6 +2,8 @@
 description: 本文档记录了 VulnHub Mr-Robot 靶机的完整渗透测试过程，涵盖信息收集、Web 枚举、WordPress 用户名枚举与密码爆破、后台主题文件修改获取 PHP 反弹 Shell、PTY 交互升级、从敏感文件获取 robot 用户 Hash 并破解切换用户，以及利用 Nmap SUID 提权至 root 的攻击链路。文中同时整理了 Nmap、DIRB、WPScan、Hashcat、GTFOBins 等工具命令速查表与关键技术说明，适合作为 WordPress 靶场渗透与 SUID 提权的学习笔记。
 ---
 
+- 来源：听课笔记 from Zumpyx_OSCP-Like Vulnhub Machines_系列
+
 > [Mr-Robot: 1 ~ VulnHub](https://www.vulnhub.com/entry/mr-robot-1,151/)
 
 ## 攻击链路

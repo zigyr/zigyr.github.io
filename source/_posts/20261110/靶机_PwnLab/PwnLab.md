@@ -2,6 +2,7 @@
 description: PwnLab 靶机从 Web 登录框入手，SQL 注入无果后通过 ?page=login 的本地文件包含配合 PHP 伪协议读取源码，从 config.php 获取 MySQL 凭据并查询 Users.users 表解出用户口令登录后台；随后上传 GIF 图片马并利用文件包含执行拿到 shell，再借助已获取凭据从 kent 切换至 kane，利用 msgmike 中相对命令 cat 进行 PATH 环境变量劫持切换到 mike，最后利用 msg2root 中 /bin/echo %s >> /root/messages.txt 的命令注入获得 root 权限并读取 flag。
 ---
 
+- 来源：听课笔记 from Zumpyx_OSCP-Like Vulnhub Machines_系列
 
 ## 信息收集
 

